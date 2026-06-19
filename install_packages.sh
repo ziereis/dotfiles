@@ -122,7 +122,29 @@ install_github_binary() {
     echo "$tool: binary '$binary' not found in ${url##*/}" >&2
     return 1
   }
-  install -m 0755 "$found" "$BIN_DIR/$binary"
+  if [[ "$tool" == neovim ]]; then
+    install_neovim_distribution "$found"
+  else
+    install -m 0755 "$found" "$BIN_DIR/$binary"
+  fi
+}
+
+install_neovim_distribution() {
+  local nvim_binary=$1 source_root target staged
+  source_root=$(cd "$(dirname "$nvim_binary")/.." && pwd)
+  target="$HOME/.local/opt/neovim"
+  staged="$target.new.$$"
+
+  mkdir -p "${target%/*}"
+  rm -rf "$staged"
+  mv "$source_root" "$staged"
+  rm -rf "$target"
+  mv "$staged" "$target"
+
+  # Neovim needs its runtime under ../share/nvim relative to the executable.
+  # Link to the complete distribution instead of copying only bin/nvim.
+  rm -f "$BIN_DIR/nvim"
+  ln -s "$target/bin/nvim" "$BIN_DIR/nvim"
 }
 
 install_claude() {
