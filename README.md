@@ -1,5 +1,7 @@
 # Dotfiles
 
+[![Cross-platform install](https://github.com/ziereis/dotfiles/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ziereis/dotfiles/actions/workflows/ci.yml)
+
 Supported platforms:
 
 - Debian/Ubuntu Linux on x86_64
