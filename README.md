@@ -25,6 +25,15 @@ The installer installs packages, checks out plugins, and links the dotfiles into
 your home directory. Existing files are never overwritten: Stow stops and reports
 any conflicts. `~/.local/bin` precedes system tool locations automatically.
 
+The private companion repository `ziereis/dotfiles-private` supplies
+`~/.zshrc.local` and `~/.gitconfig.local`. On a new machine, the installer opens
+GitHub's browser authentication flow when `gh` is not authenticated yet. To install
+only the public configuration, use:
+
+```sh
+DOTFILES_SKIP_PRIVATE=1 ./install_packages.sh
+```
+
 Inspect the installation plan without changing the machine:
 
 ```sh

@@ -13,6 +13,7 @@ assert_plan() {
   for tool in "${TOOLS[@]}"; do
     grep -Fq "release[$tool]:" <<<"$output"
   done
+  grep -Fq "private: ziereis/dotfiles-private" <<<"$output"
   grep -Fq "links: $ROOT -> $HOME" <<<"$output"
 }
 

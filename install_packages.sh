@@ -35,6 +35,9 @@ fi
 PLATFORM="$OS-$ARCH"
 BIN_DIR=${BIN_DIR:-"$HOME/.local/bin"}
 DOTFILES_TARGET=${DOTFILES_TARGET:-"$HOME"}
+PRIVATE_REPO=${DOTFILES_PRIVATE_REPO:-"ziereis/dotfiles-private"}
+PRIVATE_DIR=${DOTFILES_PRIVATE_DIR:-"$HOME/.local/share/dotfiles-private"}
+SKIP_PRIVATE=${DOTFILES_SKIP_PRIVATE:-0}
 TMP_DIR=""
 
 cleanup() {
@@ -187,6 +190,58 @@ install_git_checkout() {
   git clone --depth 1 "$repo" "$destination"
 }
 
+link_private_file() {
+  local source=$1 target=$2
+  if [[ -L "$target" ]]; then
+    ln -sfn "$source" "$target"
+  elif [[ -e "$target" ]]; then
+    echo "cannot link private config: $target already exists" >&2
+    echo "move its contents into $source, then remove $target and rerun" >&2
+    return 1
+  else
+    ln -s "$source" "$target"
+  fi
+}
+
+install_private_dotfiles() {
+  say "private: $PRIVATE_REPO -> $PRIVATE_DIR"
+  if [[ "$SKIP_PRIVATE" == 1 ]]; then
+    say "private: skipped by DOTFILES_SKIP_PRIVATE"
+    return
+  fi
+  (( DRY_RUN )) && return
+
+  if [[ -d "$PRIVATE_DIR/.git" ]]; then
+    git -C "$PRIVATE_DIR" pull --ff-only
+  else
+    if ! gh auth status --hostname github.com >/dev/null 2>&1; then
+      if [[ -t 0 && -t 1 ]]; then
+        say "GitHub authentication is required for $PRIVATE_REPO."
+        gh auth login --hostname github.com --git-protocol https --web
+      else
+        echo "GitHub authentication is required for $PRIVATE_REPO." >&2
+        echo "Run 'gh auth login', or set DOTFILES_SKIP_PRIVATE=1, then rerun." >&2
+        return 1
+      fi
+    fi
+    mkdir -p "${PRIVATE_DIR%/*}"
+    gh repo clone "$PRIVATE_REPO" "$PRIVATE_DIR"
+  fi
+
+  [[ -f "$PRIVATE_DIR/zshrc.local" ]] || {
+    echo "$PRIVATE_DIR/zshrc.local is missing" >&2
+    return 1
+  }
+  [[ -f "$PRIVATE_DIR/gitconfig.local" ]] || {
+    echo "$PRIVATE_DIR/gitconfig.local is missing" >&2
+    return 1
+  }
+
+  mkdir -p "$DOTFILES_TARGET"
+  link_private_file "$PRIVATE_DIR/zshrc.local" "$DOTFILES_TARGET/.zshrc.local"
+  link_private_file "$PRIVATE_DIR/gitconfig.local" "$DOTFILES_TARGET/.gitconfig.local"
+}
+
 link_dotfiles() {
   say "links: $SCRIPT_DIR -> $DOTFILES_TARGET"
   (( DRY_RUN )) && return
@@ -217,6 +272,7 @@ install_git_checkout https://github.com/zsh-users/zsh-autosuggestions "$HOME/.lo
 install_git_checkout https://github.com/zsh-users/zsh-syntax-highlighting "$HOME/.local/share/zsh/plugins/zsh-syntax-highlighting"
 install_git_checkout https://github.com/sindresorhus/pure "$HOME/.local/share/zsh/plugins/pure"
 
+install_private_dotfiles
 link_dotfiles
 
 if (( DRY_RUN )); then
