@@ -130,21 +130,23 @@ install_github_binary() {
 }
 
 install_neovim_distribution() {
-  local nvim_binary=$1 source_root target staged
+  local nvim_binary=$1 source_root prefix
   source_root=$(cd "$(dirname "$nvim_binary")/.." && pwd)
-  target="$HOME/.local/opt/neovim"
-  staged="$target.new.$$"
+  prefix=${BIN_DIR%/bin}
+  [[ "$prefix" != "$BIN_DIR" ]] || {
+    echo "Neovim requires BIN_DIR to end in /bin: $BIN_DIR" >&2
+    return 1
+  }
 
-  mkdir -p "${target%/*}"
-  rm -rf "$staged"
-  mv "$source_root" "$staged"
-  rm -rf "$target"
-  mv "$staged" "$target"
+  mkdir -p "$prefix/bin" "$prefix/lib" "$prefix/share"
 
-  # Neovim needs its runtime under ../share/nvim relative to the executable.
-  # Link to the complete distribution instead of copying only bin/nvim.
+  # Replace only Neovim-owned immutable runtime files. User data such as
+  # share/nvim/lazy and share/nvim/mason remains untouched.
+  rm -rf "$prefix/lib/nvim" "$prefix/share/nvim/runtime"
+  [[ ! -d "$source_root/lib" ]] || cp -R "$source_root/lib/." "$prefix/lib/"
+  cp -R "$source_root/share/." "$prefix/share/"
   rm -f "$BIN_DIR/nvim"
-  ln -s "$target/bin/nvim" "$BIN_DIR/nvim"
+  install -m 0755 "$source_root/bin/nvim" "$BIN_DIR/nvim"
 }
 
 install_claude() {

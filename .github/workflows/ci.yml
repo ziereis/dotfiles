@@ -61,6 +61,7 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           nvim --version
+          nvim --headless -u NONE '+lua assert(vim.fn.isdirectory(vim.env.VIMRUNTIME) == 1)' +qa
           rg --version
           fzf --version
           bat --version
