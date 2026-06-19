@@ -73,6 +73,9 @@ jobs:
           br --version
           claude --version
 
+      - name: Load Neovim configuration and all plugins
+        run: ./tests/nvim_test.sh
+
       - name: Check Zsh startup and package precedence
         run: ./tests/zshrc_test.sh
 

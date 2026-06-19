@@ -57,6 +57,7 @@ Inspect the installation plan without changing the machine:
 ```sh
 ./tests/install_test.sh
 ./tests/zshrc_test.sh
+./tests/nvim_test.sh
 ```
 
 These tests exercise OS/architecture detection and every release mapping without

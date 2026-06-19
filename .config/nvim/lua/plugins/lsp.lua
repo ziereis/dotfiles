@@ -14,6 +14,7 @@ return {
   },
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
+    enabled = vim.env.DOTFILES_CI ~= "1",
     dependencies = { "mason-org/mason.nvim" },
     opts = {
       ensure_installed = {
