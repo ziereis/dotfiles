@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
 DRY_RUN=0
 if [[ "${1:-}" == "--dry-run" ]]; then
   DRY_RUN=1
@@ -32,6 +34,7 @@ fi
 
 PLATFORM="$OS-$ARCH"
 BIN_DIR=${BIN_DIR:-"$HOME/.local/bin"}
+DOTFILES_TARGET=${DOTFILES_TARGET:-"$HOME"}
 TMP_DIR=""
 
 cleanup() {
@@ -184,6 +187,13 @@ install_git_checkout() {
   git clone --depth 1 "$repo" "$destination"
 }
 
+link_dotfiles() {
+  say "links: $SCRIPT_DIR -> $DOTFILES_TARGET"
+  (( DRY_RUN )) && return
+  mkdir -p "$DOTFILES_TARGET"
+  stow --restow --dir="$SCRIPT_DIR" --target="$DOTFILES_TARGET" .
+}
+
 say "platform: $PLATFORM"
 install_system_packages
 
@@ -207,5 +217,12 @@ install_git_checkout https://github.com/zsh-users/zsh-autosuggestions "$HOME/.lo
 install_git_checkout https://github.com/zsh-users/zsh-syntax-highlighting "$HOME/.local/share/zsh/plugins/zsh-syntax-highlighting"
 install_git_checkout https://github.com/sindresorhus/pure "$HOME/.local/share/zsh/plugins/pure"
 
-say "installed release binaries in $BIN_DIR"
-say "Mason will install Neovim-specific language servers, formatters, and debuggers."
+link_dotfiles
+
+if (( DRY_RUN )); then
+  say "dry run complete"
+else
+  say "installed release binaries in $BIN_DIR"
+  say "linked dotfiles into $DOTFILES_TARGET"
+  say "Mason will install Neovim-specific language servers, formatters, and debuggers."
+fi

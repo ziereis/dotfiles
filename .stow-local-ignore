@@ -1,0 +1,11 @@
+^\.git$
+^\.github
+^\.gitignore$
+^\.stow-local-ignore$
+^\.claude
+^\.agents
+^\.codex
+^\.DS_Store$
+^README\.md$
+^install_packages\.sh$
+^tests

@@ -53,6 +53,7 @@ jobs:
       - name: Install system and release packages
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          DOTFILES_TARGET: ${{ runner.temp }}/dotfiles-home
         run: ./install_packages.sh
 
       - name: Verify installed commands
@@ -73,10 +74,12 @@ jobs:
 
       - name: Check dotfile linking
         run: |
-          target=$(mktemp -d)
-          stow --target="$target" .
+          target="$RUNNER_TEMP/dotfiles-home"
           test -L "$target/.zshrc"
-          test -L "$target/.config/nvim/init.lua"
+          test -e "$target/.config/nvim/init.lua"
+          test ! -e "$target/install_packages.sh"
+          test ! -e "$target/tests"
+          test ! -e "$target/.github"
 
   release-assets:
     name: Current GitHub release assets

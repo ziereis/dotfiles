@@ -13,6 +13,7 @@ assert_plan() {
   for tool in "${TOOLS[@]}"; do
     grep -Fq "release[$tool]:" <<<"$output"
   done
+  grep -Fq "links: $ROOT -> $HOME" <<<"$output"
 }
 
 assert_plan Linux x86_64 linux-x86_64

@@ -19,11 +19,11 @@ On macOS, install Homebrew and the Xcode Command Line Tools first. Then:
 git clone https://github.com/ziereis/dotfiles
 cd dotfiles
 ./install_packages.sh
-stow .
 ```
 
-`~/.local/bin` must precede system tool locations. The included `.zshrc` does
-this automatically.
+The installer installs packages, checks out plugins, and links the dotfiles into
+your home directory. Existing files are never overwritten: Stow stops and reports
+any conflicts. `~/.local/bin` precedes system tool locations automatically.
 
 Inspect the installation plan without changing the machine:
 
