@@ -1,0 +1,93 @@
+name: Cross-platform install
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dotfiles-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86_64
+            runner: ubuntu-24.04
+            expected_os: Linux
+            expected_arch: x86_64
+          - name: Linux ARM64
+            runner: ubuntu-24.04-arm
+            expected_os: Linux
+            expected_arch: aarch64
+          - name: macOS ARM64
+            runner: macos-15
+            expected_os: Darwin
+            expected_arch: arm64
+
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out dotfiles
+        uses: actions/checkout@v4
+
+      - name: Verify native runner
+        env:
+          EXPECTED_OS: ${{ matrix.expected_os }}
+          EXPECTED_ARCH: ${{ matrix.expected_arch }}
+        run: |
+          test "$(uname -s)" = "$EXPECTED_OS"
+          test "$(uname -m)" = "$EXPECTED_ARCH"
+
+      - name: Check installer plans
+        run: ./tests/install_test.sh
+
+      - name: Install system and release packages
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./install_packages.sh
+
+      - name: Verify installed commands
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          nvim --version
+          rg --version
+          fzf --version
+          bat --version
+          delta --version
+          lazygit --version
+          tree-sitter --version
+          ninja --version
+          gh --version
+
+      - name: Check Zsh startup and package precedence
+        run: ./tests/zshrc_test.sh
+
+      - name: Check dotfile linking
+        run: |
+          target=$(mktemp -d)
+          stow --target="$target" .
+          test -L "$target/.zshrc"
+          test -L "$target/.config/nvim/init.lua"
+
+  release-assets:
+    name: Current GitHub release assets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out dotfiles
+        uses: actions/checkout@v4
+
+      - name: Validate all release mappings and digests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./tests/release_assets_test.sh

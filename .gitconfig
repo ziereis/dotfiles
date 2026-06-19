@@ -1,0 +1,28 @@
+[user]
+	email = 44057120+ziereis@users.noreply.github.com
+	name = Thomas Ziereis
+	signingkey = ~/.ssh/id_rsa.pub
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = ~/.ssh/allowed_signers
+[credential "https://github.com"]
+	helper = 
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !gh auth git-credential
+[core]
+	editor = nvim
+[core]
+  pager = delta
+[delta]
+  dark = true
+[diff]
+	tool = nvimdiff
+[difftool]
+	prompt = false
