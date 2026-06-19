@@ -3,42 +3,38 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-INSTALLER="$ROOT/install_packages.sh"
+source "$ROOT/packages/github.sh"
+LOCK_FILE="$ROOT/packages/github.lock"
 
 command -v curl >/dev/null
 command -v jq >/dev/null
 
 github_release_json() {
-  local repo=$1
+  local repo=$1 tag=$2
   local curl_args=(-fsSL --retry 3)
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
     curl_args+=(-H "Authorization: Bearer $GITHUB_TOKEN")
     curl_args+=(-H "X-GitHub-Api-Version: 2022-11-28")
   fi
-  curl "${curl_args[@]}" "https://api.github.com/repos/$repo/releases/latest"
+  curl "${curl_args[@]}" "https://api.github.com/repos/$repo/releases/tags/$tag"
 }
 
-for target in "Linux x86_64" "Linux aarch64" "Darwin arm64"; do
-  read -r os arch <<<"$target"
-  while IFS= read -r line; do
-    [[ "$line" == release\[* ]] || continue
-    tool=${line#release[}
-    tool=${tool%%]*}
-    rest=${line#*: }
-    repo=${rest%% / *}
-    pattern=${rest#* / }
-    json=$(github_release_json "$repo")
-    count=$(jq --arg pattern "$pattern" '[.assets[] | select(.name | test($pattern))] | length' <<<"$json")
-    [[ "$count" == 1 ]] || {
-      echo "$os/$arch $tool: expected one asset, found $count" >&2
+for tool in "${GITHUB_TOOLS[@]}"; do
+  repo=$(github_repo "$tool")
+  tag=$(awk -F '\t' -v tool="$tool" '$1 == tool { print $4; exit }' "$LOCK_FILE")
+  json=$(github_release_json "$repo" "$tag")
+  for platform in linux-x86_64 linux-arm64 macos-arm64; do
+    line=$(awk -F '\t' -v tool="$tool" -v platform="$platform" \
+      '$1 == tool && $2 == platform { print }' "$LOCK_FILE")
+    [[ -n "$line" ]] || { echo "$tool/$platform is not locked" >&2; exit 1; }
+    IFS=$'\t' read -r _ _ locked_repo locked_tag asset expected binary <<<"$line"
+    [[ "$locked_repo" == "$repo" && "$locked_tag" == "$tag" && -n "$binary" ]] || exit 1
+    actual=$(jq -r --arg asset "$asset" '.assets[] | select(.name == $asset) | .digest // empty' <<<"$json")
+    [[ "$actual" == "sha256:$expected" ]] || {
+      echo "$tool/$platform: locked digest no longer matches GitHub" >&2
       exit 1
     }
-    digest=$(jq -r --arg pattern "$pattern" '.assets[] | select(.name | test($pattern)) | .digest // empty' <<<"$json")
-    [[ "$digest" == sha256:* ]] || {
-      echo "$os/$arch $tool: selected asset has no SHA-256 digest" >&2
-      exit 1
-    }
-  done < <(DOTFILES_OS="$os" DOTFILES_ARCH="$arch" "$INSTALLER" --dry-run)
+  done
 done
 
-echo "release asset tests passed"
+echo "locked release asset tests passed"

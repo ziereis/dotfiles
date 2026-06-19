@@ -4,15 +4,16 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 INSTALLER="$ROOT/install_packages.sh"
-TOOLS=(neovim ripgrep fzf bat delta lazygit tree-sitter ninja gh)
+source "$ROOT/packages/github.sh"
 
 assert_plan() {
   local os=$1 arch=$2 expected=$3 output tool
   output=$(DOTFILES_OS="$os" DOTFILES_ARCH="$arch" "$INSTALLER" --dry-run)
   grep -Fq "platform: $expected" <<<"$output"
-  for tool in "${TOOLS[@]}"; do
+  for tool in "${GITHUB_TOOLS[@]}"; do
     grep -Fq "release[$tool]:" <<<"$output"
   done
+  grep -Fq "native[claude]: https://claude.ai/install.sh (stable)" <<<"$output"
   grep -Fq "private: ziereis/dotfiles-private" <<<"$output"
   grep -Fq "links: $ROOT -> $HOME" <<<"$output"
 }

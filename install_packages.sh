@@ -3,6 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/packages/github.sh"
 
 DRY_RUN=0
 if [[ "${1:-}" == "--dry-run" ]]; then
@@ -49,16 +50,6 @@ say() {
   printf '%s\n' "$*"
 }
 
-github_release_json() {
-  local repo=$1
-  local curl_args=(-fsSL --retry 3)
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    curl_args+=(-H "Authorization: Bearer $GITHUB_TOKEN")
-    curl_args+=(-H "X-GitHub-Api-Version: 2022-11-28")
-  fi
-  curl "${curl_args[@]}" "https://api.github.com/repos/$repo/releases/latest"
-}
-
 install_system_packages() {
   case "$OS" in
     linux)
@@ -91,74 +82,33 @@ install_system_packages() {
   esac
 }
 
-asset_pattern() {
-  local tool=$1
-  case "$tool:$PLATFORM" in
-    neovim:linux-x86_64) echo '^nvim-linux-x86_64\.tar\.gz$' ;;
-    neovim:linux-arm64) echo '^nvim-linux-arm64\.tar\.gz$' ;;
-    neovim:macos-arm64) echo '^nvim-macos-arm64\.tar\.gz$' ;;
-    ripgrep:linux-x86_64) echo '^ripgrep-.*-x86_64-unknown-linux-musl\.tar\.gz$' ;;
-    ripgrep:linux-arm64) echo '^ripgrep-.*-aarch64-unknown-linux-gnu\.tar\.gz$' ;;
-    ripgrep:macos-arm64) echo '^ripgrep-.*-aarch64-apple-darwin\.tar\.gz$' ;;
-    fzf:linux-x86_64) echo '^fzf-.*-linux_amd64\.tar\.gz$' ;;
-    fzf:linux-arm64) echo '^fzf-.*-linux_arm64\.tar\.gz$' ;;
-    fzf:macos-arm64) echo '^fzf-.*-darwin_arm64\.tar\.gz$' ;;
-    bat:linux-x86_64) echo '^bat-v.*-x86_64-unknown-linux-gnu\.tar\.gz$' ;;
-    bat:linux-arm64) echo '^bat-v.*-aarch64-unknown-linux-gnu\.tar\.gz$' ;;
-    bat:macos-arm64) echo '^bat-v.*-aarch64-apple-darwin\.tar\.gz$' ;;
-    delta:linux-x86_64) echo '^delta-.*-x86_64-unknown-linux-gnu\.tar\.gz$' ;;
-    delta:linux-arm64) echo '^delta-.*-aarch64-unknown-linux-gnu\.tar\.gz$' ;;
-    delta:macos-arm64) echo '^delta-.*-aarch64-apple-darwin\.tar\.gz$' ;;
-    lazygit:linux-x86_64) echo '^lazygit_.*_linux_x86_64\.tar\.gz$' ;;
-    lazygit:linux-arm64) echo '^lazygit_.*_linux_arm64\.tar\.gz$' ;;
-    lazygit:macos-arm64) echo '^lazygit_.*_darwin_arm64\.tar\.gz$' ;;
-    tree-sitter:linux-x86_64) echo '^tree-sitter-cli-linux-x64\.zip$' ;;
-    tree-sitter:linux-arm64) echo '^tree-sitter-cli-linux-arm64\.zip$' ;;
-    tree-sitter:macos-arm64) echo '^tree-sitter-cli-macos-arm64\.zip$' ;;
-    ninja:linux-x86_64) echo '^ninja-linux\.zip$' ;;
-    ninja:linux-arm64) echo '^ninja-linux-aarch64\.zip$' ;;
-    ninja:macos-arm64) echo '^ninja-mac\.zip$' ;;
-    gh:linux-x86_64) echo '^gh_.*_linux_amd64\.tar\.gz$' ;;
-    gh:linux-arm64) echo '^gh_.*_linux_arm64\.tar\.gz$' ;;
-    gh:macos-arm64) echo '^gh_.*_macOS_arm64\.zip$' ;;
-    *) echo "no release mapping for $tool on $PLATFORM" >&2; return 1 ;;
-  esac
-}
-
 install_github_binary() {
-  local tool=$1 repo=$2 binary=$3 pattern json asset_count url digest archive extracted found actual
-  pattern=$(asset_pattern "$tool")
-  say "release[$tool]: $repo / $pattern"
+  local tool=$1 lock_line repo tag asset expected binary url archive extracted found actual
+  lock_line=$(awk -F '\t' -v tool="$tool" -v platform="$PLATFORM" \
+    '$1 == tool && $2 == platform { print }' "$SCRIPT_DIR/packages/github.lock")
+  [[ -n "$lock_line" ]] || {
+    echo "no locked release for $tool on $PLATFORM" >&2
+    return 1
+  }
+  IFS=$'\t' read -r _ _ repo tag asset expected binary <<<"$lock_line"
+  say "release[$tool]: $repo@$tag / $asset"
   (( DRY_RUN )) && return
 
-  json=$(github_release_json "$repo")
-  asset_count=$(jq --arg pattern "$pattern" '[.assets[] | select(.name | test($pattern))] | length' <<<"$json")
-  if [[ "$asset_count" != 1 ]]; then
-    echo "$tool: expected one release asset matching $pattern, found $asset_count" >&2
-    return 1
-  fi
-
-  url=$(jq -r --arg pattern "$pattern" '.assets[] | select(.name | test($pattern)) | .browser_download_url' <<<"$json")
-  digest=$(jq -r --arg pattern "$pattern" '.assets[] | select(.name | test($pattern)) | .digest // empty' <<<"$json")
+  url="https://github.com/$repo/releases/download/$tag/$asset"
   archive="$TMP_DIR/${url##*/}"
   extracted="$TMP_DIR/$tool"
   mkdir -p "$extracted"
   curl -fL --retry 3 -o "$archive" "$url"
 
-  if [[ "$digest" == sha256:* ]]; then
-    if [[ "$OS" == macos ]]; then
-      actual=$(shasum -a 256 "$archive" | awk '{print $1}')
-    else
-      actual=$(sha256sum "$archive" | awk '{print $1}')
-    fi
-    [[ "$actual" == "${digest#sha256:}" ]] || {
-      echo "$tool: SHA-256 verification failed" >&2
-      return 1
-    }
+  if [[ "$OS" == macos ]]; then
+    actual=$(shasum -a 256 "$archive" | awk '{print $1}')
   else
-    echo "$tool: GitHub did not publish a digest for ${url##*/}" >&2
-    return 1
+    actual=$(sha256sum "$archive" | awk '{print $1}')
   fi
+  [[ "$actual" == "$expected" ]] || {
+    echo "$tool: SHA-256 verification failed" >&2
+    return 1
+  }
 
   case "$archive" in
     *.tar.gz) tar -xzf "$archive" -C "$extracted" ;;
@@ -173,6 +123,14 @@ install_github_binary() {
     return 1
   }
   install -m 0755 "$found" "$BIN_DIR/$binary"
+}
+
+install_claude() {
+  local installer="$TMP_DIR/claude-install.sh"
+  say "native[claude]: https://claude.ai/install.sh (stable)"
+  (( DRY_RUN )) && return
+  curl -fsSL --retry 3 -o "$installer" https://claude.ai/install.sh
+  bash "$installer" stable
 }
 
 install_git_checkout() {
@@ -257,15 +215,10 @@ if (( ! DRY_RUN )); then
   TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install.XXXXXX")
 fi
 
-install_github_binary neovim neovim/neovim nvim
-install_github_binary ripgrep BurntSushi/ripgrep rg
-install_github_binary fzf junegunn/fzf fzf
-install_github_binary bat sharkdp/bat bat
-install_github_binary delta dandavison/delta delta
-install_github_binary lazygit jesseduffield/lazygit lazygit
-install_github_binary tree-sitter tree-sitter/tree-sitter tree-sitter
-install_github_binary ninja ninja-build/ninja ninja
-install_github_binary gh cli/cli gh
+for tool in "${GITHUB_TOOLS[@]}"; do
+  install_github_binary "$tool"
+done
+install_claude
 
 install_git_checkout https://github.com/tmux-plugins/tpm "$HOME/.config/tmux/plugins/tpm"
 install_git_checkout https://github.com/zsh-users/zsh-autosuggestions "$HOME/.local/share/zsh/plugins/zsh-autosuggestions"

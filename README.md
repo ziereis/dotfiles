@@ -7,9 +7,11 @@ Supported platforms:
 - macOS on Apple Silicon
 
 The bootstrap uses `apt` or Homebrew only for system dependencies. Portable CLI
-tools are downloaded from their latest GitHub releases, selected for the current
-OS and architecture, and verified against the SHA-256 digest published by GitHub.
-Neovim plugins use `lazy.nvim`; Neovim development tools use Mason.
+tools use releases pinned by tag, asset, and SHA-256 in `packages/github.lock`.
+Normal installation never resolves GitHub's `latest` release.
+This includes the `br` command from `beads_rust`. Claude Code uses Anthropic's
+official native installer and its SHA-256 manifest verification. Neovim plugins
+use `lazy.nvim`; Neovim development tools use Mason.
 
 ## Install
 
@@ -33,6 +35,14 @@ only the public configuration, use:
 ```sh
 DOTFILES_SKIP_PRIVATE=1 ./install_packages.sh
 ```
+
+Update all pinned GitHub tools explicitly with:
+
+```sh
+./scripts/update_github_lock.sh
+```
+
+Review and commit the resulting lock-file changes before installing them.
 
 Inspect the installation plan without changing the machine:
 

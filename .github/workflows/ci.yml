@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: Check out dotfiles
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Verify native runner
         env:
@@ -69,6 +69,8 @@ jobs:
           tree-sitter --version
           ninja --version
           gh --version
+          br --version
+          claude --version
 
       - name: Check Zsh startup and package precedence
         run: ./tests/zshrc_test.sh
@@ -89,7 +91,7 @@ jobs:
 
     steps:
       - name: Check out dotfiles
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Validate all release mappings and digests
         env:
