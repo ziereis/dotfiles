@@ -1,7 +1,17 @@
 return {
   cmd = { "basedpyright-langserver", "--stdio" },
   filetypes = { "python" },
-  root_markers = { "pyproject.toml", "setup.py", "requirements.txt" },
+  root_markers = {
+    "pyrightconfig.json",
+    "pyproject.toml",
+    "setup.py",
+    "setup.cfg",
+    "requirements.txt",
+    ".python-version",
+    ".venv",
+    "venv",
+    ".git",
+  },
   settings = {
     basedpyright = {
       usePyprojectToml = true,
