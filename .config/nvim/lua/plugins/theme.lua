@@ -29,12 +29,6 @@ return {
   --     end
   --   end
   --
-  --   vim.api.nvim_set_hl(0, "DiffAdd", { bg = "#1e3d2f" })
-  --   vim.api.nvim_set_hl(0, "DiffDelete", { bg = "#3d1e28" })
-  --   vim.api.nvim_set_hl(0, "DiffChange", { bg = "#2b3d4f" })
-  --   vim.api.nvim_set_hl(0, "DiffText", { bg = "#3b4d5f" })
-  --   vim.api.nvim_set_hl(0, "DiffviewDiffDeleteDim", { bg = "none", fg = "#3a3a3a" })
-  --
   --   -- Neo-tree: use white instead of teal for directories
   --   vim.api.nvim_set_hl(0, "Directory", { fg = "#ffffff" })
   --   vim.api.nvim_set_hl(0, "NeoTreeDirectoryName", { fg = "#ffffff" })
@@ -76,10 +70,5 @@ return {
   config = function()
     vim.cmd.colorscheme("gruber-darker")
     vim.api.nvim_set_hl(0, "String", { fg = "#b8bb8a" })
-
-    vim.api.nvim_set_hl(0, "DiffAdd", { bg = "#1e3d2f" })
-    vim.api.nvim_set_hl(0, "DiffDelete", { bg = "#3d1e28" })
-    vim.api.nvim_set_hl(0, "DiffChange", { bg = "#2b3d4f" })
-    vim.api.nvim_set_hl(0, "DiffText", { bg = "#3b4d5f" })
   end,
 }

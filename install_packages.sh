@@ -53,7 +53,7 @@ say() {
 install_system_packages() {
   case "$OS" in
     linux)
-      local packages=(ca-certificates curl git jq unzip stow zsh fish tmux build-essential)
+      local packages=(ca-certificates curl git jq unzip stow zsh fish tmux build-essential python3-pip python3-venv)
       say "system[apt]: ${packages[*]}"
       if (( ! DRY_RUN )); then
         command -v apt-get >/dev/null || {
@@ -199,7 +199,7 @@ install_private_dotfiles() {
     if ! gh auth status --hostname github.com >/dev/null 2>&1; then
       if [[ -t 0 && -t 1 ]]; then
         say "GitHub authentication is required for $PRIVATE_REPO."
-        gh auth login --hostname github.com --git-protocol https --web
+        GIT_CONFIG_GLOBAL=/dev/null gh auth login --hostname github.com --git-protocol https --web
       else
         echo "GitHub authentication is required for $PRIVATE_REPO." >&2
         echo "Run 'gh auth login', or set DOTFILES_SKIP_PRIVATE=1, then rerun." >&2

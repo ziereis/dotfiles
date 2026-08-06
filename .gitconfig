@@ -28,3 +28,5 @@
 	prompt = false
 [include]
 	path = ~/.gitconfig.local
+[safe]
+	directory = *
