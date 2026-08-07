@@ -64,11 +64,22 @@ return {
   --   vim.cmd.colorscheme("tokyonight-night")
   -- end,
 
-  "blazkowolf/gruber-darker.nvim",
+  -- "blazkowolf/gruber-darker.nvim",
+  -- lazy = false,
+  -- priority = 1000,
+  -- config = function()
+  --   vim.cmd.colorscheme("gruber-darker")
+  --   vim.api.nvim_set_hl(0, "String", { fg = "#b8bb8a" })
+  -- end,
+
+  "navarasu/onedark.nvim",
   lazy = false,
   priority = 1000,
   config = function()
-    vim.cmd.colorscheme("gruber-darker")
-    vim.api.nvim_set_hl(0, "String", { fg = "#b8bb8a" })
+    vim.opt.background = "light"
+    require("onedark").setup({
+      style = "light",
+    })
+    require("onedark").load()
   end,
 }
