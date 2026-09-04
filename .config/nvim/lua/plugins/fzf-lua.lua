@@ -5,13 +5,25 @@ return {
   config = function()
     local fzf = require("fzf-lua")
 
+    -- The "fzf-native" profile renders previews with `bat` as an external
+    -- process, so the preview colors come from bat's theme, not from Neovim.
+    -- One Half is bat's port of the One palette, so its Dark/Light variants
+    -- track onedark.nvim's own (dark fg #abb2bf, keyword #c678dd).
+    local bat_theme = vim.o.background == "light" and "OneHalfLight" or "OneHalfDark"
+
     fzf.setup({
       "fzf-native",
       fzf_colors = true,
       previewers = {
+        -- NOTE: unused while the "fzf-native" profile is active, since that
+        -- profile sets `winopts.preview.default = "bat"`. Kept for when a
+        -- picker explicitly opts back into the Neovim previewer.
         builtin = {
           syntax = true,
           treesitter = { enabled = true },
+        },
+        bat = {
+          args = ("--color=always --style=numbers,changes --theme=%q"):format(bat_theme),
         },
       },
       winopts = {

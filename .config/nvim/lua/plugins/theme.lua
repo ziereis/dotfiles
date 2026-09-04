@@ -76,9 +76,9 @@ return {
   lazy = false,
   priority = 1000,
   config = function()
-    vim.opt.background = "light"
+    vim.opt.background = "dark"
     require("onedark").setup({
-      style = "light",
+      style = "dark",
     })
     require("onedark").load()
   end,

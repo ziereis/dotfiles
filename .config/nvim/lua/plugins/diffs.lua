@@ -1,3 +1,5 @@
+-- Reviews (vs trunk, vs the downstack branch) live in diffview.lua now; this
+-- plugin is kept for its gitsigns hunk highlighting and neogit diff rendering.
 return {
   "barrettruth/diffs.nvim",
   cmd = { "Diff" },
@@ -9,7 +11,4 @@ return {
       },
     }
   end,
-  keys = {
-    { "<leader>gr", "<cmd>Diff review<cr>", desc = "[G]it [R]eview" },
-  },
 }
