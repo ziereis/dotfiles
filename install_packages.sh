@@ -231,6 +231,15 @@ link_dotfiles() {
   stow --restow --dir="$SCRIPT_DIR" --target="$DOTFILES_TARGET" .
 }
 
+publish_agents() {
+  say "agents: $SCRIPT_DIR/agents -> Claude Code and Codex"
+  if (( DRY_RUN )); then
+    DOTFILES_TARGET="$DOTFILES_TARGET" "$SCRIPT_DIR/scripts/publish_agents.sh" --dry-run
+  else
+    DOTFILES_TARGET="$DOTFILES_TARGET" "$SCRIPT_DIR/scripts/publish_agents.sh"
+  fi
+}
+
 say "platform: $PLATFORM"
 install_system_packages
 
@@ -251,6 +260,7 @@ install_git_checkout https://github.com/sindresorhus/pure "$HOME/.local/share/zs
 
 install_private_dotfiles
 link_dotfiles
+publish_agents
 
 if (( DRY_RUN )); then
   say "dry run complete"

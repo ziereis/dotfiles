@@ -52,12 +52,43 @@ Inspect the installation plan without changing the machine:
 ./install_packages.sh --dry-run
 ```
 
+## Agent contracts
+
+Both documents under `agents/` were taken verbatim from
+[`benvanik/dotfiles`](https://github.com/benvanik/dotfiles) at commit
+[`5bc0bb3`](https://github.com/benvanik/dotfiles/commit/5bc0bb3230b54ee19ab60cebe06ff5d301f7ed04)
+(2026-08-19), including the copy-instead-of-symlink publication approach.
+
+`agents/` is not stowed. `install_packages.sh` publishes it to the paths Claude
+Code and Codex read:
+
+| Source | Claude Code | Codex |
+| --- | --- | --- |
+| `WORKING_CONTRACT.md` | `~/.claude/CLAUDE.md` | `~/.codex/AGENTS.md` |
+| `skills/deep-review/SKILL.md` | `~/.claude/skills/deep-review/SKILL.md` | `~/.codex/skills/deep-review/SKILL.md` |
+| `REVIEW.md` | `~/.claude/skills/deep-review/REVIEW.md` | `~/.codex/skills/deep-review/REVIEW.md` |
+
+`WORKING_CONTRACT.md` is the global contract every session loads. `REVIEW.md` is
+an evidence-driven pull request review method, reached by typing `/deep-review`
+in either client; both share the same `skills/<name>/SKILL.md` format, so one
+skill file serves both. Publish or audit outside an install with:
+
+```sh
+./scripts/publish_agents.sh
+./scripts/publish_agents.sh --check
+```
+
+Copies, not symlinks, because neither client reliably follows a symlinked
+contract. A destination you edited by hand is reported and left alone until you
+pass `--force`. See [`agents/README.md`](agents/README.md) for details.
+
 ## Test platform plans
 
 ```sh
 ./tests/install_test.sh
 ./tests/zshrc_test.sh
 ./tests/nvim_test.sh
+./tests/agents_test.sh
 ```
 
 These tests exercise OS/architecture detection and every release mapping without

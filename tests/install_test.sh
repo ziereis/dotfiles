@@ -16,6 +16,7 @@ assert_plan() {
   grep -Fq "native[claude]: https://claude.ai/install.sh (stable)" <<<"$output"
   grep -Fq "private: ziereis/dotfiles-private" <<<"$output"
   grep -Fq "links: $ROOT -> $HOME" <<<"$output"
+  grep -Fq "agents: $ROOT/agents -> Claude Code and Codex" <<<"$output"
 }
 
 assert_plan Linux x86_64 linux-x86_64

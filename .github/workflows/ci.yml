@@ -79,6 +79,9 @@ jobs:
       - name: Check Zsh startup and package precedence
         run: ./tests/zshrc_test.sh
 
+      - name: Check agent file publication
+        run: ./tests/agents_test.sh
+
       - name: Check dotfile linking
         run: |
           target="$RUNNER_TEMP/dotfiles-home"
@@ -87,6 +90,14 @@ jobs:
           test ! -e "$target/install_packages.sh"
           test ! -e "$target/tests"
           test ! -e "$target/.github"
+          test ! -e "$target/agents"
+          test ! -L "$target/.claude/CLAUDE.md"
+          cmp agents/WORKING_CONTRACT.md "$target/.claude/CLAUDE.md"
+          cmp agents/WORKING_CONTRACT.md "$target/.codex/AGENTS.md"
+          cmp agents/skills/deep-review/SKILL.md "$target/.claude/skills/deep-review/SKILL.md"
+          cmp agents/skills/deep-review/SKILL.md "$target/.codex/skills/deep-review/SKILL.md"
+          cmp agents/REVIEW.md "$target/.claude/skills/deep-review/REVIEW.md"
+          cmp agents/REVIEW.md "$target/.codex/skills/deep-review/REVIEW.md"
 
   release-assets:
     name: Current GitHub release assets
