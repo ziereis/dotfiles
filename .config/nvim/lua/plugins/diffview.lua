@@ -10,8 +10,8 @@ local function trunk(root)
   end
 
   for _, candidate in ipairs({ "origin/main", "origin/master", "main", "master" }) do
-    local exists = vim.system({ "git", "-C", root, "rev-parse", "--verify", "--quiet", candidate .. "^{commit}" })
-      :wait()
+    local exists =
+      vim.system({ "git", "-C", root, "rev-parse", "--verify", "--quiet", candidate .. "^{commit}" }):wait()
     if exists.code == 0 then
       return candidate
     end
@@ -54,6 +54,35 @@ local function review_downstack()
   review(vim.trim(result.stdout))
 end
 
+-- The diff HEAD itself introduced, as opposed to the branch-wide reviews above.
+-- Two dots and three are equivalent for this particular range, since a parent
+-- is an ancestor of its commit and is therefore its own merge base with it, so
+-- the plain range is used because it states the intent rather than relying on
+-- that equality.
+--
+-- `--imply-local` is deliberately absent here. It repoints a HEAD endpoint at
+-- worktree files, which is what makes the branch reviews editable, but on a
+-- single-commit diff it would fold uncommitted edits into the commit's own
+-- content and misattribute them.
+local function review_head()
+  local root = repo_root()
+
+  if vim.system({ "git", "-C", root, "rev-parse", "--verify", "--quiet", "HEAD" }):wait().code ~= 0 then
+    vim.notify("no commit on HEAD yet, so there is nothing to diff", vim.log.levels.WARN)
+    return
+  end
+
+  -- HEAD^1 rather than HEAD~1 to name the first parent explicitly: the two are
+  -- the same revision, but on a merge commit this diff is everything the merge
+  -- brought in relative to the branch it landed on, and the spelling says so.
+  if vim.system({ "git", "-C", root, "rev-parse", "--verify", "--quiet", "HEAD^1" }):wait().code ~= 0 then
+    vim.notify("HEAD is the root commit, so it has no parent to diff against", vim.log.levels.WARN)
+    return
+  end
+
+  vim.cmd("DiffviewOpen HEAD^1..HEAD")
+end
+
 return {
   "sindrets/diffview.nvim",
   dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -62,6 +91,7 @@ return {
     { "<leader>gr", review_trunk, desc = "[G]it [R]eview (vs trunk)" },
     { "<leader>gd", review_downstack, desc = "[G]it [D]ownstack review" },
     { "<leader>gD", "<cmd>DiffviewOpen<cr>", desc = "[G]it [D]iffview (working tree)" },
+    { "<leader>gC", review_head, desc = "[G]it [C]ommit review (HEAD vs parent)" },
     { "<leader>gq", "<cmd>DiffviewClose<cr>", desc = "[G]it diffview [Q]uit" },
     { "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "[G]it file [H]istory" },
     { "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "[G]it repo [H]istory" },

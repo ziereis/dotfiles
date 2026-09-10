@@ -7,9 +7,10 @@ return {
 
     -- The "fzf-native" profile renders previews with `bat` as an external
     -- process, so the preview colors come from bat's theme, not from Neovim.
-    -- One Half is bat's port of the One palette, so its Dark/Light variants
-    -- track onedark.nvim's own (dark fg #abb2bf, keyword #c678dd).
-    local bat_theme = vim.o.background == "light" and "OneHalfLight" or "OneHalfDark"
+    -- The ansi theme paints through the terminal's own 16 colors, which
+    -- ../../../kitty/vesper.conf defines and theme.lua mirrors into
+    -- vim.g.terminal_color_*, so previews follow Vesper wherever they render.
+    local bat_theme = "ansi"
 
     fzf.setup({
       "fzf-native",

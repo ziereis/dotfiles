@@ -1,4 +1,56 @@
+# Colors follow the Vesper palette, shared with the Neovim colorscheme
+# (datsfilipe/vesper.nvim), ../kitty/vesper.conf, and ../tmux/tmux.conf.
+# Diff tints match the Neovim diff highlights: the accent hue at 14% over
+# #101010 for a changed line, 30% for the changed words within it. The
+# background carries the signal so syntax highlighting stays readable.
+#
+# The ansi syntax theme renders code through the terminal's own 16 colors,
+# which ../kitty/vesper.conf defines, so delta follows the same palette without
+# a second copy of it here. delta only auto-detects truecolor on a tty and
+# lazygit hands it a pipe, so the 24-bit tints above need --true-color=always.
 git:
   pagers:
     - colorArg: always
-      pager: delta --dark --paging=never --line-numbers
+      pager: >-
+        delta --paging=never --line-numbers
+        --true-color=always
+        --syntax-theme=ansi
+        --plus-style="syntax #23312e"
+        --plus-emph-style="syntax #395850"
+        --minus-style="syntax #312020"
+        --minus-emph-style="syntax #583232"
+        --hunk-header-style="#ffc799 omit"
+        --hunk-header-decoration-style="#343434 box"
+        --file-style="#ffc799"
+        --file-decoration-style="#343434 ul"
+        --line-numbers-left-style="#505050"
+        --line-numbers-right-style="#505050"
+        --line-numbers-minus-style="#ff8080"
+        --line-numbers-plus-style="#99ffe4"
+        --line-numbers-zero-style="#505050"
+
+gui:
+  theme:
+    activeBorderColor:
+      - '#ffc799'
+      - bold
+    inactiveBorderColor:
+      - '#505050'
+    searchingActiveBorderColor:
+      - '#99ffe4'
+    optionsTextColor:
+      - '#a0a0a0'
+    selectedLineBgColor:
+      - '#232323'
+    cherryPickedCommitFgColor:
+      - '#101010'
+    cherryPickedCommitBgColor:
+      - '#ffc799'
+    markedBaseCommitFgColor:
+      - '#101010'
+    markedBaseCommitBgColor:
+      - '#99ffe4'
+    unstagedChangesColor:
+      - '#ff8080'
+    defaultFgColor:
+      - '#cccccc'
