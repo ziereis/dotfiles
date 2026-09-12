@@ -67,6 +67,107 @@ local function apply_diff_highlights()
   hl("NeogitHunkHeaderHighlight", { fg = "#101010", bg = diff.peach })
 end
 
+-- Vesper predates the @markup.* capture names and still targets the legacy
+-- @text.* ones, several of which it misspelled as @texcolors.* in a bad
+-- rename, so nothing it defines reaches a markdown buffer. Every markdown
+-- capture therefore lands unset, and render-markdown's default links resolve
+-- into whatever Vesper happens to define for unrelated purposes.
+--
+-- The worst of it: RenderMarkdownCode(Inline) links to ColorColumn, which
+-- Vesper paints #585858 -- a near-mid gray slab. Inline code inherits its
+-- foreground from an unset @markup.raw, i.e. Normal's #CCCCCC, for 4.4:1, and
+-- comments inside a fenced block land at 1.7:1 against the same slab. The
+-- heading backgrounds link straight to DiffText/DiffAdd/DiffChange/DiffDelete,
+-- so headings render in the git-diff tints defined above.
+--
+-- Rebuild the markdown surface from the Vesper palette. Code carries a darker
+-- slab than the editor background so syntax colors keep the contrast they were
+-- tuned for, and headings carry a brightness ramp. The heading slabs stay off
+-- entirely; markdown.lua drops them, because clearing a highlight
+-- group here cannot win -- a cleared group reads as unset, so render-markdown's
+-- `default = true` links reapply on top of it when its plugin file runs.
+local markdown = {
+  code_bg = "#161616",
+  inline_bg = "#232323",
+  inline_fg = "#FFC799",
+
+  white = "#FFFFFF",
+  peach = "#FFC799",
+  mint = "#99FFE4",
+  mint_dim = "#82D9C2",
+  fg = "#CCCCCC",
+  primary = "#A0A0A0",
+  comment = "#7D7D7D",
+  symbol = "#65737E",
+}
+
+local function apply_markdown_highlights()
+  local hl = function(group, spec)
+    vim.api.nvim_set_hl(0, group, spec)
+  end
+
+  -- Inline code. Peach on the darkest panel tint, 10.4:1.
+  hl("@markup.raw", { fg = markdown.inline_fg, bg = markdown.inline_bg })
+  hl("@markup.raw.markdown_inline", { fg = markdown.inline_fg, bg = markdown.inline_bg })
+  hl("RenderMarkdownCodeInline", { fg = markdown.inline_fg, bg = markdown.inline_bg })
+
+  -- Fenced and indented blocks. No foreground: language injections paint the
+  -- contents, and @markup.raw.block would otherwise flatten an unlabelled
+  -- fence to a single color.
+  hl("@markup.raw.block", { bg = markdown.code_bg })
+  hl("RenderMarkdownCode", { bg = markdown.code_bg })
+  hl("RenderMarkdownCodeBorder", { bg = markdown.code_bg })
+  hl("RenderMarkdownCodeFallback", { fg = markdown.fg, bg = markdown.code_bg })
+  hl("RenderMarkdownCodeInfo", { fg = markdown.comment, bg = markdown.code_bg })
+
+  -- Headings descend in brightness rather than hue, so depth reads at a glance
+  -- without six competing accent colors.
+  local heading = {
+    markdown.white,
+    markdown.peach,
+    markdown.mint,
+    markdown.fg,
+    markdown.primary,
+    markdown.comment,
+  }
+  for level, color in ipairs(heading) do
+    hl("@markup.heading." .. level .. ".markdown", { fg = color, bold = true })
+    hl("RenderMarkdownH" .. level, { fg = color, bold = true })
+  end
+  hl("@markup.heading", { fg = markdown.white, bold = true })
+
+  -- Emphasis.
+  hl("@markup.strong", { fg = markdown.white, bold = true })
+  hl("@markup.italic", { fg = markdown.fg, italic = true })
+  hl("@markup.strikethrough", { fg = markdown.comment, strikethrough = true })
+
+  -- The query captures the whole block_quote node, so this color sets the
+  -- quoted body text; only the marker bar drops to the dimmer symbol gray.
+  hl("@markup.quote", { fg = markdown.primary })
+  hl("RenderMarkdownQuote", { fg = markdown.symbol })
+
+  -- Lists and checkboxes.
+  hl("@markup.list", { fg = markdown.peach })
+  hl("@markup.list.checked", { fg = markdown.mint })
+  hl("@markup.list.unchecked", { fg = markdown.symbol })
+  hl("RenderMarkdownBullet", { fg = markdown.peach })
+  hl("RenderMarkdownChecked", { fg = markdown.mint })
+  hl("RenderMarkdownUnchecked", { fg = markdown.symbol })
+  hl("RenderMarkdownDash", { fg = markdown.symbol })
+
+  -- Links. Label carries the color; the URL stays metadata.
+  hl("@markup.link", { fg = markdown.mint_dim })
+  hl("@markup.link.label", { fg = markdown.mint_dim, underline = false })
+  hl("@markup.link.url", { fg = markdown.symbol, underline = true })
+
+  -- Tables.
+  hl("RenderMarkdownTableHead", { fg = markdown.peach, bold = true })
+  hl("RenderMarkdownTableRow", { fg = markdown.symbol })
+
+  -- ==highlight== spans reuse the inline code panel.
+  hl("RenderMarkdownInlineHighlight", { fg = markdown.inline_fg, bg = markdown.inline_bg })
+end
+
 return {
   -- "projekt0n/github-nvim-theme",
   -- name = "github-theme",
@@ -178,12 +279,18 @@ return {
     -- The direct call covers this startup; the autocmd re-applies on any later
     -- reload of the colorscheme, which clears every group. Both run before
     -- neogit and diffview lazy-load, so those two find the groups already set
-    -- and leave them alone.
+    -- and leave them alone. render-markdown registers its groups with
+    -- `default = true`, which never overwrites an existing definition, so its
+    -- links lose to these regardless of load order.
     vim.api.nvim_create_autocmd("ColorScheme", {
-      group = vim.api.nvim_create_augroup("vesper-diff-highlights", { clear = true }),
+      group = vim.api.nvim_create_augroup("vesper-highlight-overrides", { clear = true }),
       pattern = "vesper",
-      callback = apply_diff_highlights,
+      callback = function()
+        apply_diff_highlights()
+        apply_markdown_highlights()
+      end,
     })
     apply_diff_highlights()
+    apply_markdown_highlights()
   end,
 }

@@ -11,9 +11,13 @@ Supported platforms:
 The bootstrap uses `apt` or Homebrew only for system dependencies. Portable CLI
 tools use releases pinned by tag, asset, and SHA-256 in `packages/github.lock`.
 Normal installation never resolves GitHub's `latest` release.
-This includes the `br` command from `beads_rust`. Claude Code uses Anthropic's
-official native installer and its SHA-256 manifest verification. Neovim plugins
-use `lazy.nvim`; Neovim development tools use Mason.
+This includes the `br` command from `beads_rust`. Claude Code is the exception:
+it uses Anthropic's official native installer and its SHA-256 manifest
+verification, and tracks the `latest` release channel. The installer passes that
+channel to `claude install`, which records it as `autoUpdatesChannel` in
+`~/.claude/settings.json` and so governs every later self-update. Set
+`DOTFILES_CLAUDE_CHANNEL=stable` to install and pin the stable channel instead.
+Neovim plugins use `lazy.nvim`; Neovim development tools use Mason.
 
 ## Install
 

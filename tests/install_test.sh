@@ -13,7 +13,7 @@ assert_plan() {
   for tool in "${GITHUB_TOOLS[@]}"; do
     grep -Fq "release[$tool]:" <<<"$output"
   done
-  grep -Fq "native[claude]: https://claude.ai/install.sh (stable)" <<<"$output"
+  grep -Fq "native[claude]: https://claude.ai/install.sh (latest)" <<<"$output"
   grep -Fq "private: ziereis/dotfiles-private" <<<"$output"
   grep -Fq "links: $ROOT -> $HOME" <<<"$output"
   grep -Fq "agents: $ROOT/agents -> Claude Code and Codex" <<<"$output"

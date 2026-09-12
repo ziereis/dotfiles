@@ -39,6 +39,7 @@ DOTFILES_TARGET=${DOTFILES_TARGET:-"$HOME"}
 PRIVATE_REPO=${DOTFILES_PRIVATE_REPO:-"ziereis/dotfiles-private"}
 PRIVATE_DIR=${DOTFILES_PRIVATE_DIR:-"$HOME/.local/share/dotfiles-private"}
 SKIP_PRIVATE=${DOTFILES_SKIP_PRIVATE:-0}
+CLAUDE_CHANNEL=${DOTFILES_CLAUDE_CHANNEL:-latest}
 TMP_DIR=""
 
 cleanup() {
@@ -149,12 +150,15 @@ install_neovim_distribution() {
   install -m 0755 "$source_root/bin/nvim" "$BIN_DIR/nvim"
 }
 
+# The channel argument reaches `claude install <channel>`, which records it as
+# autoUpdatesChannel in ~/.claude/settings.json. That setting drives every later
+# self-update, so the channel chosen here persists well beyond this run.
 install_claude() {
   local installer="$TMP_DIR/claude-install.sh"
-  say "native[claude]: https://claude.ai/install.sh (stable)"
+  say "native[claude]: https://claude.ai/install.sh ($CLAUDE_CHANNEL)"
   (( DRY_RUN )) && return
   curl -fsSL --retry 3 -o "$installer" https://claude.ai/install.sh
-  bash "$installer" stable
+  bash "$installer" "$CLAUDE_CHANNEL"
 }
 
 install_git_checkout() {
