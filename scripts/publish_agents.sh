@@ -15,7 +15,7 @@ STATE_DIR=${DOTFILES_STATE_DIR:-"$DOTFILES_TARGET/.local/state/dotfiles/agents"}
 
 # "source relative to agents/:destination relative to the link target". Claude
 # Code and Codex share the skills/<name>/SKILL.md format, so one skill file
-# serves both, and REVIEW.md ships beside it as the skill's reference document.
+# serves both. Publish reference documents with their skill entrypoints.
 PUBLICATIONS=(
   "WORKING_CONTRACT.md:.claude/CLAUDE.md"
   "WORKING_CONTRACT.md:.codex/AGENTS.md"
@@ -23,6 +23,10 @@ PUBLICATIONS=(
   "skills/deep-review/SKILL.md:.codex/skills/deep-review/SKILL.md"
   "REVIEW.md:.claude/skills/deep-review/REVIEW.md"
   "REVIEW.md:.codex/skills/deep-review/REVIEW.md"
+  "skills/design-review/SKILL.md:.claude/skills/design-review/SKILL.md"
+  "skills/design-review/SKILL.md:.codex/skills/design-review/SKILL.md"
+  "skills/design-review/references/book-summary.md:.claude/skills/design-review/references/book-summary.md"
+  "skills/design-review/references/book-summary.md:.codex/skills/design-review/references/book-summary.md"
 )
 
 MODE=publish

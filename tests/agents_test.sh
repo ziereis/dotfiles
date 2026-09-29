@@ -15,11 +15,17 @@ CLAUDE_SKILL="$TARGET/.claude/skills/deep-review/SKILL.md"
 CODEX_SKILL="$TARGET/.codex/skills/deep-review/SKILL.md"
 CLAUDE_METHOD="$TARGET/.claude/skills/deep-review/REVIEW.md"
 CODEX_METHOD="$TARGET/.codex/skills/deep-review/REVIEW.md"
+CLAUDE_DESIGN_SKILL="$TARGET/.claude/skills/design-review/SKILL.md"
+CODEX_DESIGN_SKILL="$TARGET/.codex/skills/design-review/SKILL.md"
+CLAUDE_DESIGN_REFERENCE="$TARGET/.claude/skills/design-review/references/book-summary.md"
+CODEX_DESIGN_REFERENCE="$TARGET/.codex/skills/design-review/references/book-summary.md"
 
-mkdir -p "$TARGET" "$SOURCE/skills/deep-review"
+mkdir -p "$TARGET" "$SOURCE/skills/deep-review" "$SOURCE/skills/design-review/references"
 printf 'contract v1\n' >"$SOURCE/WORKING_CONTRACT.md"
 printf 'review method v1\n' >"$SOURCE/REVIEW.md"
 printf 'skill v1\n' >"$SOURCE/skills/deep-review/SKILL.md"
+printf 'design skill v1\n' >"$SOURCE/skills/design-review/SKILL.md"
+printf 'design reference v1\n' >"$SOURCE/skills/design-review/references/book-summary.md"
 
 publish() {
   DOTFILES_TARGET="$TARGET" DOTFILES_AGENTS_DIR="$SOURCE" "$PUBLISH" "$@"
@@ -38,7 +44,11 @@ for pair in \
     "agents/skills/deep-review/SKILL.md:$CLAUDE_SKILL" \
     "agents/skills/deep-review/SKILL.md:$CODEX_SKILL" \
     "agents/REVIEW.md:$CLAUDE_METHOD" \
-    "agents/REVIEW.md:$CODEX_METHOD"; do
+    "agents/REVIEW.md:$CODEX_METHOD" \
+    "agents/skills/design-review/SKILL.md:$CLAUDE_DESIGN_SKILL" \
+    "agents/skills/design-review/SKILL.md:$CODEX_DESIGN_SKILL" \
+    "agents/skills/design-review/references/book-summary.md:$CLAUDE_DESIGN_REFERENCE" \
+    "agents/skills/design-review/references/book-summary.md:$CODEX_DESIGN_REFERENCE"; do
   cmp -s "$ROOT/${pair%%:*}" "${pair#*:}" || fail "${pair#*:} differs from ${pair%%:*}"
   [[ ! -L "${pair#*:}" ]] || fail "${pair#*:} was published as a symlink"
 done
@@ -69,6 +79,15 @@ publish --check >/dev/null && fail "--check missed a stale published skill"
 publish >/dev/null
 cmp -s "$SOURCE/skills/deep-review/SKILL.md" "$CLAUDE_SKILL" || fail "stale skill was not refreshed"
 publish --check >/dev/null || fail "--check rejected the refreshed publication"
+
+# Nested skill references participate in drift detection and refresh too.
+printf 'design reference v2\n' >"$SOURCE/skills/design-review/references/book-summary.md"
+publish --check >/dev/null && fail "--check missed a stale design reference"
+publish >/dev/null
+for destination in "$CLAUDE_DESIGN_REFERENCE" "$CODEX_DESIGN_REFERENCE"; do
+  cmp -s "$SOURCE/skills/design-review/references/book-summary.md" "$destination" || fail "design reference was not refreshed"
+done
+publish --check >/dev/null || fail "--check rejected the refreshed design reference"
 
 # A hand-edited destination belongs to the user until --force says otherwise.
 printf 'local edits\n' >"$CLAUDE"

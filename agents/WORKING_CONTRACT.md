@@ -316,6 +316,21 @@ quality, or development velocity.
 
 ## Code Style
 
+Apply John Ousterhout's complexity-first design principles:
+
+- Prefer deep modules: simple, complete interfaces that hide substantial work.
+  Organize around the knowledge each module owns, not execution order.
+- Make common operations easy with sensible defaults. Keep general mechanisms
+  separate from application policy; avoid speculative generality and pass-through
+  layers that add no useful abstraction.
+- Pull shared complexity into its owner. Define unnecessary errors and special
+  cases away through clear semantics; preserve failures callers need to handle.
+- Split or combine code to reduce dependencies and reader effort, not to hit a
+  method-length target. Use precise, consistent names and obvious control flow.
+- Sketch interface contracts before implementation; document meaning, units,
+  ownership, constraints, and rationale rather than restating code. Compare
+  alternatives for consequential design choices and measure performance claims.
+
 - Comments document current behavior, invariants, and non-obvious reasoning,
   not edit history, beads, TODO breadcrumbs, or transient project plans.
 - A block comment immediately above a declaration belongs to that declaration.

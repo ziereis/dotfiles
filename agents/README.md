@@ -26,6 +26,18 @@ reachable. Claude Code 2.1 and Codex 0.153 implement the same
 `disable-model-invocation: true`, which keeps an agent from starting a
 twelve-phase review on its own; you invoke it.
 
+`skills/design-review/SKILL.md` provides a focused design review based on John
+Ousterhout's *A Philosophy of Software Design* (first edition, 2018). Its bundled
+`references/book-summary.md` covers all 21 chapters and numbered subsections,
+all 14 named red flags, and additional design smells. It requires evidence of
+complexity in real callers and changes, rather than treating principles as rigid
+rules. It can be selected for design-review requests and reports findings without
+editing code by default. The original PDF is not required after publication.
+
+Invoke `/design-review path/to/code` in Claude or `$design-review path/to/code`
+in Codex, or ask for a design review in natural language. With no target, it uses
+uncommitted changes or the current branch's established diff base.
+
 ## Using the review method
 
 ```
@@ -48,6 +60,8 @@ absolute path.
 | `WORKING_CONTRACT.md` | `~/.claude/CLAUDE.md` | `~/.codex/AGENTS.md` |
 | `skills/deep-review/SKILL.md` | `~/.claude/skills/deep-review/SKILL.md` | `~/.codex/skills/deep-review/SKILL.md` |
 | `REVIEW.md` | `~/.claude/skills/deep-review/REVIEW.md` | `~/.codex/skills/deep-review/REVIEW.md` |
+| `skills/design-review/SKILL.md` | `~/.claude/skills/design-review/SKILL.md` | `~/.codex/skills/design-review/SKILL.md` |
+| `skills/design-review/references/book-summary.md` | `~/.claude/skills/design-review/references/book-summary.md` | `~/.codex/skills/design-review/references/book-summary.md` |
 
 Copies rather than symlinks, because the clients do not reliably follow a
 symlinked contract. `install_packages.sh` runs the script after Stow.
@@ -73,6 +87,7 @@ Adding a document is one line in the script's `PUBLICATIONS` table.
 `WORKING_CONTRACT.md` and `REVIEW.md` were taken verbatim from
 [`benvanik/dotfiles`](https://github.com/benvanik/dotfiles) at commit
 [`5bc0bb3`](https://github.com/benvanik/dotfiles/commit/5bc0bb3230b54ee19ab60cebe06ff5d301f7ed04)
-(2026-08-19). They are copied as-is so upstream changes stay diffable; local
-edits are expected over time and will end that property. Upstream publishes only
-the contract and leaves `REVIEW.md` unreferenced; the skill is local.
+(2026-08-19). The working contract now includes local complexity-first code style
+guidance derived from Ousterhout's book; `REVIEW.md` remains unchanged. Upstream
+publishes only the contract and leaves `REVIEW.md` unreferenced; both skill
+entrypoints and the paraphrased book reference are local additions.

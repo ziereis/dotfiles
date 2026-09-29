@@ -58,7 +58,7 @@ Inspect the installation plan without changing the machine:
 
 ## Agent contracts
 
-Both documents under `agents/` were taken verbatim from
+The working contract and deep-review method under `agents/` originated in
 [`benvanik/dotfiles`](https://github.com/benvanik/dotfiles) at commit
 [`5bc0bb3`](https://github.com/benvanik/dotfiles/commit/5bc0bb3230b54ee19ab60cebe06ff5d301f7ed04)
 (2026-08-19), including the copy-instead-of-symlink publication approach.
@@ -71,11 +71,18 @@ Code and Codex read:
 | `WORKING_CONTRACT.md` | `~/.claude/CLAUDE.md` | `~/.codex/AGENTS.md` |
 | `skills/deep-review/SKILL.md` | `~/.claude/skills/deep-review/SKILL.md` | `~/.codex/skills/deep-review/SKILL.md` |
 | `REVIEW.md` | `~/.claude/skills/deep-review/REVIEW.md` | `~/.codex/skills/deep-review/REVIEW.md` |
+| `skills/design-review/SKILL.md` | `~/.claude/skills/design-review/SKILL.md` | `~/.codex/skills/design-review/SKILL.md` |
+| `skills/design-review/references/book-summary.md` | `~/.claude/skills/design-review/references/book-summary.md` | `~/.codex/skills/design-review/references/book-summary.md` |
 
 `WORKING_CONTRACT.md` is the global contract every session loads. `REVIEW.md` is
 an evidence-driven pull request review method, reached by typing `/deep-review`
 in either client; both share the same `skills/<name>/SKILL.md` format, so one
-skill file serves both. Publish or audit outside an install with:
+skill file serves both. The local `design-review` skill reviews abstraction,
+module boundaries, and complexity using a bundled summary of Ousterhout's
+*A Philosophy of Software Design*, including every chapter and all named red
+flags. Invoke `/design-review` in Claude or `$design-review` in Codex with a path
+or review target. The contract also includes concise code style guidance from
+the book. Publish or audit outside an install with:
 
 ```sh
 ./scripts/publish_agents.sh
