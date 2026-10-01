@@ -56,6 +56,7 @@ vim.opt.fillchars:append({ diff = "╱" })
 vim.filetype.add({
   extension = {
     mlir = "mlir",
+    csl = "csl",
     cu = "cuda",
     cuh = "cuda",
   },

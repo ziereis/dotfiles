@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Ordered list of standalone tools installed from pinned GitHub releases.
-GITHUB_TOOLS=(neovim ripgrep fzf bat delta lazygit tree-sitter ninja gh beads-rust)
+GITHUB_TOOLS=(neovim ripgrep fzf bat delta lazygit tree-sitter ninja gh beads-rust yazi)
 
 github_repo() {
   case "$1" in
@@ -15,6 +15,7 @@ github_repo() {
     ninja) echo ninja-build/ninja ;;
     gh) echo cli/cli ;;
     beads-rust) echo Dicklesworthstone/beads_rust ;;
+    yazi) echo sxyazi/yazi ;;
     *) echo "unknown GitHub tool: $1" >&2; return 1 ;;
   esac
 }
@@ -63,6 +64,9 @@ github_asset_pattern() {
     beads-rust:linux-x86_64) echo '^br-.*-linux_amd64\.tar\.gz$' ;;
     beads-rust:linux-arm64) echo '^br-.*-linux_arm64\.tar\.gz$' ;;
     beads-rust:macos-arm64) echo '^br-.*-darwin_arm64\.tar\.gz$' ;;
+    yazi:linux-x86_64) echo '^yazi-x86_64-unknown-linux-musl\.zip$' ;;
+    yazi:linux-arm64) echo '^yazi-aarch64-unknown-linux-musl\.zip$' ;;
+    yazi:macos-arm64) echo '^yazi-aarch64-apple-darwin\.zip$' ;;
     *) echo "no release mapping for $tool on $platform" >&2; return 1 ;;
   esac
 }

@@ -19,6 +19,11 @@ channel to `claude install`, which records it as `autoUpdatesChannel` in
 `DOTFILES_CLAUDE_CHANNEL=stable` to install and pin the stable channel instead.
 Neovim plugins use `lazy.nvim`; Neovim development tools use Mason.
 
+Neovim uses [Yazi](https://github.com/mikavilpas/yazi.nvim) as its file explorer.
+Press `\` to browse from the current file, or open a directory with `nvim .`.
+Inside Yazi, use `h/j/k/l` to navigate, `Enter` to open a file, and `q` to close.
+You can also run `yazi` directly in a terminal.
+
 ## Install
 
 On macOS, install Homebrew and the Xcode Command Line Tools first. Then:

@@ -66,7 +66,7 @@ install_system_packages() {
       fi
       ;;
     macos)
-      local packages=(git jq stow fish tmux)
+      local packages=(git jq stow fish tmux coreutils)
       say "system[brew]: ${packages[*]}"
       if (( ! DRY_RUN )); then
         command -v brew >/dev/null || {
@@ -127,6 +127,9 @@ install_github_binary() {
     install_neovim_distribution "$found"
   else
     install -m 0755 "$found" "$BIN_DIR/$binary"
+    if [[ "$tool" == yazi ]]; then
+      install -m 0755 "$(dirname "$found")/ya" "$BIN_DIR/ya"
+    fi
   fi
 }
 

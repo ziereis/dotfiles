@@ -29,3 +29,6 @@ gh	macos-arm64	cli/cli	v2.95.0	gh_2.95.0_macOS_arm64.zip	3677f9c27965825f9c7d503
 beads-rust	linux-x86_64	Dicklesworthstone/beads_rust	v0.2.15	br-0.2.15-linux_amd64.tar.gz	38d008eaae7f82d40617dc5987e7e52e14add74cd819b9e4bd4e4dcd03b4a667	br
 beads-rust	linux-arm64	Dicklesworthstone/beads_rust	v0.2.15	br-0.2.15-linux_arm64.tar.gz	334c3e2feae6014324eaa823e4a0882340039a57a015fbbf6f178ca4aa79f880	br
 beads-rust	macos-arm64	Dicklesworthstone/beads_rust	v0.2.15	br-0.2.15-darwin_arm64.tar.gz	4e32133f1eca2828be15e0fa84d3db456d5af6fd64cffab7385ed449b12b889c	br
+yazi	linux-x86_64	sxyazi/yazi	v26.9.1	yazi-x86_64-unknown-linux-musl.zip	9b9c39decccf8cb0ff53a7d637d38f8a79d93bbd0099f4ea9c619ef6bb392f5d	yazi
+yazi	linux-arm64	sxyazi/yazi	v26.9.1	yazi-aarch64-unknown-linux-musl.zip	dd569daecaae914185f295634109295ccd25c1b42b02eb89a74f651970024f2e	yazi
+yazi	macos-arm64	sxyazi/yazi	v26.9.1	yazi-aarch64-apple-darwin.zip	3921182a21cceb0a505e5dac578e1487d48104caa5f114e9f8adf40b5a7289a9	yazi
