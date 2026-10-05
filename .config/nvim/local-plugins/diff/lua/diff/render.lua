@@ -1,6 +1,8 @@
 local M = {}
 local api = vim.api
 M.ns = api.nvim_create_namespace('diff.render')
+M.data = {}
+api.nvim_create_autocmd('BufWipeout', { callback = function(event) M.data[event.buf] = nil end })
 
 function M.highlights()
   local normal = api.nvim_get_hl(0, { name = 'Normal', link = false })
@@ -82,6 +84,7 @@ end
 
 function M.draw(buf, file)
   local result = M.prepare(file)
+  M.data[buf] = result
   api.nvim_buf_clear_namespace(buf, M.ns, 0, -1)
   vim.bo[buf].modifiable = true
   api.nvim_buf_set_lines(buf, 0, -1, false, result.lines)
@@ -106,13 +109,48 @@ function M.draw(buf, file)
   return result.raw
 end
 
+-- Manual folds keep ordinary Neovim fold commands working in a unified buffer.
+function M.folds(win, buf)
+  api.nvim_win_call(win, function()
+    vim.wo.foldmethod = 'manual'
+    vim.wo.foldenable = true
+    vim.wo.foldlevel = 0
+    vim.wo.foldcolumn = '1'
+    vim.wo.foldtext = "'  ··· ' .. (v:foldend - v:foldstart + 1) .. ' unchanged lines ···'"
+    vim.cmd('silent! normal! zE')
+    local data = M.data[buf] or {}
+    local groups, gutters = data.highlights or {}, data.gutters or {}
+    local changes = {}
+    for row, group in ipairs(groups) do
+      if group == 'DiffViewerAdd' or group == 'DiffViewerDelete' then changes[#changes + 1] = row end
+    end
+    local start
+    local function finish(last)
+      if not start then return end
+      local first_change, last_change = changes[1], changes[#changes]
+      local left = first_change and start > first_change and 3 or 0
+      local right = last_change and last < last_change and 3 or 0
+      local first, final = start + left, last - right
+      if final - first + 1 >= 2 then vim.cmd(first .. ',' .. final .. 'fold') end
+      start = nil
+    end
+    for row, numbers in ipairs(gutters) do
+      local context = numbers[1] ~= '' and numbers[2] ~= '' and groups[row] == false
+      if context then start = start or row else finish(row - 1) end
+    end
+    finish(#gutters)
+    vim.cmd('silent! normal! zM')
+  end)
+end
+
 function M.gutter()
   local buf = api.nvim_win_get_buf(tonumber(vim.g.statusline_winid) or api.nvim_get_current_win())
-  local numbers = (vim.b[buf].diff_gutters or {})[vim.v.lnum] or { '', '' }
-  local width = vim.b[buf].diff_gutter_width or 3
-  local hl = (vim.b[buf].diff_line_highlights or {})[vim.v.lnum]
+  local data = M.data[buf] or {}
+  local numbers = (data.gutters or {})[vim.v.lnum] or { '', '' }
+  local width = data.width or 3
+  local hl = (data.highlights or {})[vim.v.lnum]
   local sign = hl == 'DiffViewerAdd' and '%#DiffViewerAddSign#+ ' or (hl == 'DiffViewerDelete' and '%#DiffViewerDeleteSign#− ' or '  ')
-  return '%#DiffViewerGutter#' .. string.format(' %' .. width .. 's %' .. width .. 's │ ', numbers[1], numbers[2]) .. sign .. '%*'
+  return '%C%#DiffViewerGutter#' .. string.format(' %' .. width .. 's %' .. width .. 's │ ', numbers[1], numbers[2]) .. sign .. '%*'
 end
 
 function M.panel(buf, row_files, files)

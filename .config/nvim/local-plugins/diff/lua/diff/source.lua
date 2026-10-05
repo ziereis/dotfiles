@@ -121,4 +121,84 @@ function M.stage(root, file, unstage, callback)
   M.run(args, root, callback)
 end
 
+function M.expand(file, text)
+  local complete = vim.split(text, '\n', { plain = true })
+  if complete[#complete] == '' then table.remove(complete) end
+  local result = vim.tbl_extend('force', file, { lines = {} })
+  local first, adds, removes = nil, 0, 0
+  for row, line in ipairs(file.lines) do
+    if line:match('^@@ ') then first = first or row
+    elseif first then
+      if line:sub(1, 1) == '+' then adds = adds + 1 end
+      if line:sub(1, 1) == '-' then removes = removes + 1 end
+    end
+  end
+  if not first then return file end
+  for row = 1, first - 1 do result.lines[#result.lines + 1] = file.lines[row] end
+  local old_count = #complete - adds + removes
+  result.lines[#result.lines + 1] = string.format('@@ -%d,%d +%d,%d @@', old_count == 0 and 0 or 1, old_count, #complete == 0 and 0 or 1, #complete)
+  local position = 1
+  for row = first, #file.lines do
+    local line = file.lines[row]
+    local start, count = line:match('^@@ .* %+(%d+)([^ ]*) @@')
+    if start then
+      start = tonumber(start) + (count == ',0' and 1 or 0)
+      while position < start do
+        if not complete[position] then return nil, 'File changed since the diff was loaded; refresh with r' end
+        result.lines[#result.lines + 1] = ' ' .. complete[position]
+        position = position + 1
+      end
+    else
+      local sign = line:sub(1, 1)
+      if sign == ' ' or sign == '+' then
+        if complete[position] ~= line:sub(2) then return nil, 'File changed since the diff was loaded; refresh with r' end
+        position = position + 1
+      end
+      result.lines[#result.lines + 1] = line
+    end
+  end
+  while position <= #complete do
+    result.lines[#result.lines + 1] = ' ' .. complete[position]
+    position = position + 1
+  end
+  return result
+end
+
+function M.context(root, file, callback)
+  if file.full then callback(file.full); return end
+  local sha, has_hunk
+  for _, line in ipairs(file.lines) do
+    sha = line:match('^index %x+%.%.(%x+)') or sha
+    if line:match('^@@ ') then has_hunk = true; break end
+  end
+  if not has_hunk or file.status == 'D' or file.status == 'A' or (not sha and not file.remote) or file.section == 'Untracked' then callback(file); return end
+  local function ready(text, err)
+    if not text then callback(nil, err); return end
+    local expanded, failure = M.expand(file, text)
+    if expanded then file.full = expanded end
+    callback(expanded, failure)
+  end
+  if file.remote then
+    local parts = {}
+    for segment in file.path:gmatch('[^/]+') do parts[#parts + 1] = vim.uri_encode(segment) end
+    local endpoint = 'repos/' .. file.remote.repo .. '/contents/' .. table.concat(parts, '/') .. '?ref=' .. file.remote.ref
+    M.run({ 'gh', 'api', endpoint, '-H', 'Accept: application/vnd.github.raw+json' }, root, ready)
+  elseif file.section == 'Unstaged' or sha:match('^0+$') then
+    -- Read asynchronously; only the selected file is loaded.
+    local path = root .. '/' .. file.path
+    vim.uv.fs_open(path, 'r', 438, function(err, fd)
+      if err then vim.schedule(function() ready(nil, err) end); return end
+      vim.uv.fs_fstat(fd, function(staterr, stat)
+        if staterr then vim.uv.fs_close(fd); vim.schedule(function() ready(nil, staterr) end); return end
+        vim.uv.fs_read(fd, stat.size, 0, function(readerr, data)
+          vim.uv.fs_close(fd)
+          vim.schedule(function() ready(data and data:gsub('\r\n', '\n'), readerr) end)
+        end)
+      end)
+    end)
+  else
+    M.run({ 'git', 'cat-file', 'blob', sha }, root, ready)
+  end
+end
+
 return M

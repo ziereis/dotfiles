@@ -102,6 +102,15 @@ to close the review tab.
 
 ## Edit and stage files
 
+Unchanged sections use native Neovim folds, with three lines of context around
+each change. `zo` opens a fold, `zc` closes it, `za` toggles it, `zR` opens all
+folds, and `zM` closes all folds. `[h` / `]h` still jump between change blocks.
+Full context loads asynchronously for the selected file only, with a cache of
+up to eight files. Staged and historical reviews read the reviewed Git blob;
+working-tree context reads saved disk contents. PR context reads the selected
+file at the PR's head commit through GitHub CLI. If context is unavailable,
+the original patch remains visible.
+
 In `:Diff`, files are grouped into **Unstaged** (index → disk), **Staged**
 (HEAD → index), and **Untracked**. A file with both staged and unstaged edits
 appears in both groups, with a separate preview for each.
@@ -133,7 +142,7 @@ live in `lua/diff/init.lua`, which is what `require('diff')` loads.
 scratch buffers, windows, and buffer-local mappings. `setup()` is configuration.
 There are no third-party Lua dependencies.
 
-Next steps: inline word highlights, expandable context, and file-tree grouping.
+Next steps: inline word highlights and file-tree grouping.
 Hunk staging, editing patches, review comments, and merge conflict
 resolution are not implemented. Binary changes display Git's metadata. Git-quoted
 unusual paths are retained as labels. GitHub may limit very large PR diffs.
@@ -144,6 +153,7 @@ merge review workflow.
 
 ```sh
 nvim --headless -u NONE -l tests/smoke.lua
+nvim --headless -u NONE -l tests/folds.lua
 ```
 
 This creates a temporary Git repository and verifies additions, deletions,

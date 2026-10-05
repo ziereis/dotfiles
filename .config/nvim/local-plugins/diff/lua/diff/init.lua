@@ -10,10 +10,12 @@ local function error_message(err)
   vim.notify('diff: ' .. err, vim.log.levels.ERROR)
 end
 
-local function display(title, current_branch, root)
+local function display(title, current_branch, root, remote)
   return function(patch, err)
     if not patch then error_message(err); return end
-    require('diff.view').open(source.parse(patch), title, config.panel_width, { branch = current_branch, root = root })
+    local files = source.parse(patch)
+    for _, file in ipairs(files) do file.remote = remote end
+    require('diff.view').open(files, title, config.panel_width, { branch = current_branch, root = root })
   end
 end
 
@@ -41,7 +43,14 @@ function M.open(target, other)
   with_root(function(root, current_branch)
     local pr = type(target) == 'string' and target:match('^pr%-(%d+)$')
     if pr then
-      source.run({ 'gh', 'pr', 'diff', pr, '--color=never' }, root, display('PR #' .. pr, current_branch, root))
+      source.run({ 'gh', 'pr', 'view', pr, '--json', 'headRefOid,headRepository,headRepositoryOwner' }, root, function(json, err)
+        if not json then error_message(err); return end
+        local info = vim.json.decode(json)
+        local remote = info.headRepository and info.headRepositoryOwner and {
+          repo = info.headRepositoryOwner.login .. '/' .. info.headRepository.name, ref = info.headRefOid,
+        } or nil
+        source.run({ 'gh', 'pr', 'diff', pr, '--color=never' }, root, display('PR #' .. pr, current_branch, root, remote))
+      end)
     elseif other then
       source.diff(root, { target, other }, display(target .. '..' .. other .. ' (snapshots)', current_branch, root))
     elseif target then

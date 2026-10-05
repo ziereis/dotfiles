@@ -100,17 +100,48 @@ function M.open(files, title, width, opts)
     vim.wo[commitwin].cursorline = true
     vim.wo[commitwin].winfixwidth = true
   end
-  local selected, raw_rows
+  local selected, raw_rows, displayed_file
+  local preview_id = 0
+  local context_cache = {}
   local function select(index)
     local file = files[index]
     if not file or index == selected or not api.nvim_win_is_valid(diffwin)
       or not api.nvim_buf_is_valid(diffbuf) then return end
-    raw_rows = render.draw(diffbuf, file)
+    preview_id = preview_id + 1
+    local generation = preview_id
+    displayed_file = file.full or file
+    raw_rows = render.draw(diffbuf, displayed_file)
+    render.folds(diffwin, diffbuf)
     api.nvim_win_set_cursor(diffwin, { 1, 0 })
     selected = index
     if file.section then
       local comparisons = { Staged = 'HEAD → index', Unstaged = 'index → working tree', Untracked = 'new file → working tree' }
       header(file.section .. ': ' .. comparisons[file.section])
+    end
+    if opts.root and not file.full then
+      require('diff.source').context(opts.root, file, function(expanded, err)
+        if generation ~= preview_id or files[selected or 0] ~= file or not api.nvim_buf_is_valid(diffbuf) or not api.nvim_win_is_valid(diffwin) then
+          file.full = nil
+          return
+        end
+        if not expanded then
+          vim.notify('Context unavailable: ' .. tostring(err), vim.log.levels.WARN); return
+        end
+        if expanded == file then return end
+        local old_raw = raw_rows[api.nvim_win_get_cursor(diffwin)[1]]
+        local target_line = require('diff.source').line(file, old_raw or 1)
+        raw_rows = render.draw(diffbuf, expanded)
+        displayed_file = expanded
+        render.folds(diffwin, diffbuf)
+        local numbers = (render.data[diffbuf] or {}).gutters or {}
+        for row, gutter in ipairs(numbers) do
+          if gutter[2] == target_line then api.nvim_win_set_cursor(diffwin, { row, 0 }); break end
+        end
+        -- Bound full-file caching to the most recently viewed files.
+        for i = #context_cache, 1, -1 do if context_cache[i] == file then table.remove(context_cache, i) end end
+        context_cache[#context_cache + 1] = file
+        if #context_cache > 8 then table.remove(context_cache, 1).full = nil end
+      end)
     end
   end
   api.nvim_create_autocmd('CursorMoved', {
@@ -161,6 +192,7 @@ function M.open(files, title, width, opts)
     render.panel(panelbuf, row_files, files)
     api.nvim_buf_clear_namespace(diffbuf, render.ns, 0, -1)
     vim.b[diffbuf].diff_gutters = {}
+    render.data[diffbuf] = nil
     replace(diffbuf, { 'No changes' })
     if api.nvim_win_is_valid(panelwin) and #files > 0 then
       api.nvim_win_set_cursor(panelwin, { file_rows[1], 0 })
@@ -185,6 +217,7 @@ function M.open(files, title, width, opts)
       render.panel(panelbuf, row_files, files)
       api.nvim_buf_clear_namespace(diffbuf, render.ns, 0, -1)
       vim.b[diffbuf].diff_gutters = {}
+      render.data[diffbuf] = nil
       replace(diffbuf, { 'No changes' })
       local index, distance, same_section = 1, math.huge, false
       for i, file in ipairs(files) do
@@ -245,7 +278,7 @@ function M.open(files, title, width, opts)
       vim.notify('This file does not exist in the current checkout', vim.log.levels.WARN); return
     end
     local cursor = api.nvim_win_get_cursor(diffwin)
-    local line = require('diff.source').line(file, raw_rows and raw_rows[cursor[1]] or 1)
+    local line = require('diff.source').line(displayed_file or file, raw_rows and raw_rows[cursor[1]] or 1)
     vim.cmd('tabnew')
     local edit_tab = api.nvim_get_current_tabpage()
     vim.cmd('edit ' .. vim.fn.fnameescape(path))
@@ -299,8 +332,27 @@ function M.open(files, title, width, opts)
       end)
     end, { buffer = commitbuf, desc = 'Compare two snapshots' }) end
   end
-  vim.keymap.set('n', ']h', function() vim.fn.search('^@@', 'W') end, { buffer = diffbuf })
-  vim.keymap.set('n', '[h', function() vim.fn.search('^@@', 'bW') end, { buffer = diffbuf })
+  local function jump_change(backward)
+    local groups = (render.data[diffbuf] or {}).highlights or {}
+    local starts, changing = {}, false
+    for row, group in ipairs(groups) do
+      local changed = group == 'DiffViewerAdd' or group == 'DiffViewerDelete'
+      if changed and not changing then starts[#starts + 1] = row end
+      changing = changed
+    end
+    local current = api.nvim_win_get_cursor(diffwin)[1]
+    if backward then
+      for i = #starts, 1, -1 do
+        if starts[i] < current then api.nvim_win_set_cursor(diffwin, { starts[i], 0 }); return end
+      end
+    else
+      for _, row in ipairs(starts) do
+        if row > current then api.nvim_win_set_cursor(diffwin, { row, 0 }); return end
+      end
+    end
+  end
+  vim.keymap.set('n', ']h', function() jump_change(false) end, { buffer = diffbuf })
+  vim.keymap.set('n', '[h', function() jump_change(true) end, { buffer = diffbuf })
   if #files > 0 then api.nvim_win_set_cursor(panelwin, { file_rows[1], 0 }); select(1) end
 end
 
