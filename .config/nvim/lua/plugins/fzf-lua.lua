@@ -15,6 +15,12 @@ return {
     fzf.setup({
       "fzf-native",
       fzf_colors = true,
+      files = {
+        -- Respect .gitignore in project folders even before git init.
+        rg_opts = [[--color=never --files --no-require-git -g "!.git" -g "!.jj"]],
+        fd_opts = [[--color=never --type f --type l --no-require-git --exclude .git --exclude .jj]],
+        no_ignore = false,
+      },
       previewers = {
         -- NOTE: unused while the "fzf-native" profile is active, since that
         -- profile sets `winopts.preview.default = "bat"`. Kept for when a
@@ -68,7 +74,7 @@ return {
     -- Live grep with hidden files
     vim.keymap.set("n", "<leader>sg", function()
       fzf.live_grep({
-        rg_opts = "--column --line-number --no-heading --color=always --smart-case --hidden",
+        rg_opts = "--column --line-number --no-heading --color=always --smart-case --hidden --no-require-git",
       })
     end, { desc = "[S]earch by [G]rep" })
 
