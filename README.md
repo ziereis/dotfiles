@@ -24,6 +24,15 @@ Press `\` to browse from the current file, or open a directory with `nvim .`.
 Inside Yazi, use `h/j/k/l` to navigate, `Enter` to open a file, and `q` to close.
 You can also run `yazi` directly in a terminal.
 
+Kitty uses FiraCode Nerd Font Mono and a customized Vesper palette. The installer
+downloads Nerd Fonts v3.5.1 with SHA-256 verification and installs the Mono font
+styles in `~/Library/Fonts` on macOS or
+`${XDG_DATA_HOME:-~/.local/share}/fonts/FiraCodeNerdFontMono` on Linux, refreshing
+the Linux font cache. The font version and checksum are pinned in
+`install_terminal_font` in `install_packages.sh`. Kitty itself is installed separately.
+Before linking on a machine with an existing `~/.config/kitty` directory, back it
+up and move it aside so Stow can link the repository's configuration.
+
 ## Install
 
 On macOS, install Homebrew and the Xcode Command Line Tools first. Then:

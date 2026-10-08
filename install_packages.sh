@@ -54,7 +54,7 @@ say() {
 install_system_packages() {
   case "$OS" in
     linux)
-      local packages=(ca-certificates curl git jq unzip stow zsh fish tmux build-essential python3-pip python3-venv)
+      local packages=(ca-certificates curl git jq unzip stow zsh fish tmux build-essential python3-pip python3-venv fontconfig)
       say "system[apt]: ${packages[*]}"
       if (( ! DRY_RUN )); then
         command -v apt-get >/dev/null || {
@@ -130,6 +130,38 @@ install_github_binary() {
     if [[ "$tool" == yazi ]]; then
       install -m 0755 "$(dirname "$found")/ya" "$BIN_DIR/ya"
     fi
+  fi
+}
+
+install_terminal_font() {
+  local tag=v3.5.1
+  local expected=239395baf60c89b2eaf4862b6b09db0ef95605cd3e8eef51c00345822a81a665
+  local destination archive extracted actual
+  if [[ "$OS" == macos ]]; then
+    destination="$HOME/Library/Fonts"
+  else
+    destination="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/FiraCodeNerdFontMono"
+  fi
+  say "font: FiraCode Nerd Font Mono@$tag -> $destination"
+  (( DRY_RUN )) && return
+
+  archive="$TMP_DIR/FiraCode.zip"
+  extracted="$TMP_DIR/fira-code"
+  curl -fL --retry 3 -o "$archive" "https://github.com/ryanoasis/nerd-fonts/releases/download/$tag/FiraCode.zip"
+  if [[ "$OS" == macos ]]; then
+    actual=$(shasum -a 256 "$archive" | awk '{print $1}')
+  else
+    actual=$(sha256sum "$archive" | awk '{print $1}')
+  fi
+  [[ "$actual" == "$expected" ]] || {
+    echo "Fira Code: SHA-256 verification failed" >&2
+    return 1
+  }
+  mkdir -p "$extracted" "$destination"
+  unzip -q "$archive" 'FiraCodeNerdFontMono-*.ttf' -d "$extracted"
+  install -m 0644 "$extracted"/FiraCodeNerdFontMono-*.ttf "$destination/"
+  if [[ "$OS" == linux ]]; then
+    fc-cache -f "$destination"
   fi
 }
 
@@ -267,6 +299,7 @@ fi
 for tool in "${GITHUB_TOOLS[@]}"; do
   install_github_binary "$tool"
 done
+install_terminal_font
 install_claude
 
 install_git_checkout https://github.com/tmux-plugins/tpm "$HOME/.config/tmux/plugins/tpm"
