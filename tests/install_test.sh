@@ -14,6 +14,12 @@ assert_plan() {
     grep -Fq "release[$tool]:" <<<"$output"
   done
   grep -Fq "native[claude]: https://claude.ai/install.sh (latest)" <<<"$output"
+  if [[ "$os" == Darwin ]]; then
+    grep -Fq "font: FiraCode Nerd Font Mono@v3.5.1 -> $HOME/Library/Fonts" <<<"$output"
+  else
+    grep -Fq "font: FiraCode Nerd Font Mono@v3.5.1 -> ${XDG_DATA_HOME:-$HOME/.local/share}/fonts/FiraCodeNerdFontMono" <<<"$output"
+    grep -Fq 'python3-venv fontconfig' <<<"$output"
+  fi
   grep -Fq "private: ziereis/dotfiles-private" <<<"$output"
   grep -Fq "links: $ROOT -> $HOME" <<<"$output"
   grep -Fq "agents: $ROOT/agents -> Claude Code and Codex" <<<"$output"
