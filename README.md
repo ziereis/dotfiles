@@ -38,8 +38,16 @@ The installer installs packages, checks out plugins, and links the dotfiles into
 your home directory. Existing files are never overwritten: Stow stops and reports
 any conflicts. `~/.local/bin` precedes system tool locations automatically.
 
+The installer adds an include to your existing `~/.gitconfig` for shared Git
+defaults: Neovim as the editor and diff tool, and Delta as the pager. It preserves
+your existing settings and fills in missing identity settings with `Thomas Ziereis`
+and `44057120+ziereis@users.noreply.github.com`. It does not configure SSH keys,
+credentials, signing, or trusted directories. `~/.gitconfig.local` stays under
+your control. The include is added once; settings in the included file take
+effect at that point in your config, so place personal overrides after it.
+
 The private companion repository `ziereis/dotfiles-private` supplies
-`~/.zshrc.local` and `~/.gitconfig.local`. On a new machine, the installer opens
+`~/.zshrc.local`. On a new machine, the installer opens
 GitHub's browser authentication flow when `gh` is not authenticated yet. To install
 only the public configuration, use:
 

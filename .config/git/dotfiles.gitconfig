@@ -1,0 +1,7 @@
+[core]
+	editor = nvim
+	pager = delta
+[diff]
+	tool = nvimdiff
+[difftool]
+	prompt = false

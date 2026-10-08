@@ -221,14 +221,8 @@ install_private_dotfiles() {
     echo "$PRIVATE_DIR/zshrc.local is missing" >&2
     return 1
   }
-  [[ -f "$PRIVATE_DIR/gitconfig.local" ]] || {
-    echo "$PRIVATE_DIR/gitconfig.local is missing" >&2
-    return 1
-  }
-
   mkdir -p "$DOTFILES_TARGET"
   link_private_file "$PRIVATE_DIR/zshrc.local" "$DOTFILES_TARGET/.zshrc.local"
-  link_private_file "$PRIVATE_DIR/gitconfig.local" "$DOTFILES_TARGET/.gitconfig.local"
 }
 
 link_dotfiles() {
@@ -236,6 +230,21 @@ link_dotfiles() {
   (( DRY_RUN )) && return
   mkdir -p "$DOTFILES_TARGET"
   stow --restow --dir="$SCRIPT_DIR" --target="$DOTFILES_TARGET" .
+  install_git_defaults
+}
+
+install_git_defaults() {
+  local config="$DOTFILES_TARGET/.gitconfig"
+  local defaults="$DOTFILES_TARGET/.config/git/dotfiles.gitconfig"
+  if ! git config --file "$config" --get-all include.path | grep -Fxq "$defaults"; then
+    git config --file "$config" --add include.path "$defaults"
+  fi
+  if ! git config --file "$config" --includes --get user.name >/dev/null; then
+    git config --file "$config" user.name "Thomas Ziereis"
+  fi
+  if ! git config --file "$config" --includes --get user.email >/dev/null; then
+    git config --file "$config" user.email "44057120+ziereis@users.noreply.github.com"
+  fi
 }
 
 publish_agents() {
